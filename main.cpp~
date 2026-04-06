@@ -1,0 +1,197 @@
+/*******************************************************************************
+ * main.cpp
+ * Entry point for the Game Library application. Provides a menu-driven
+ * command-line interface for managing a sorted library of games.
+ ******************************************************************************/
+ 
+#include <iostream>
+#include <string>
+#include <limits>
+#include "game.h"
+#include "library.h"
+ 
+// Default database filename
+const std::string DB_FILE = "games.db";
+ 
+/*******************************************************************************
+ * printMenu() — displays the main menu options.
+ ******************************************************************************/
+void printMenu() {
+    std::cout << "\n"
+              << "========================================\n"
+              << "         STEAM GAME LIBRARY MENU        \n"
+              << "========================================\n"
+              << "  1. Display all games\n"
+              << "  2. Add a game\n"
+              << "  3. Delete a game\n"
+              << "  4. Search by genre\n"
+              << "  5. Search by title\n"
+              << "  6. Save library to file\n"
+              << "  7. Load library from file\n"
+              << "  8. Quit\n"
+              << "========================================\n"
+              << "  Enter choice: ";
+}
+ 
+/*******************************************************************************
+ * getLine() — prompts the user and reads a full line of input.
+ ******************************************************************************/
+std::string getLine(const std::string &prompt) {
+    std::string input;
+    std::cout << "  " << prompt;
+    std::getline(std::cin, input);
+    return input;
+}
+ 
+/*******************************************************************************
+ * getFloat() — prompts the user and reads a valid float.
+ ******************************************************************************/
+float getFloat(const std::string &prompt) {
+    float value;
+    while (true) {
+        std::cout << "  " << prompt;
+        std::cin >> value;
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "  Invalid input. Please enter a number.\n";
+        } else {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            return value;
+        }
+    }
+}
+ 
+/*******************************************************************************
+ * getInt() — prompts the user and reads a valid integer.
+ ******************************************************************************/
+int getInt(const std::string &prompt) {
+    int value;
+    while (true) {
+        std::cout << "  " << prompt;
+        std::cin >> value;
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "  Invalid input. Please enter a whole number.\n";
+        } else {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            return value;
+        }
+    }
+}
+ 
+/*******************************************************************************
+ * addGame() — collects game info from the user and inserts into the library.
+ ******************************************************************************/
+void addGame(Library &lib) {
+    std::cout << "\n  --- Add a Game ---\n";
+ 
+    std::string title     = getLine("Title: ");
+    std::string publisher = getLine("Publisher: ");
+    std::string genre     = getLine("Genre (e.g. RPG, FPS, Simulation): ");
+    float hours           = getFloat("Hours Played: ");
+    float price           = getFloat("Price ($): ");
+    int   year            = getInt("Release Year: ");
+ 
+    lib.insertSorted(Game(title, publisher, genre, hours, price, year));
+    std::cout << "  \"" << title << "\" added to library.\n";
+}
+ 
+/*******************************************************************************
+ * deleteGame() — prompts for title + year and removes the matching game.
+ ******************************************************************************/
+void deleteGame(Library &lib) {
+    std::cout << "\n  --- Delete a Game ---\n";
+    std::string title = getLine("Title (exact): ");
+    int year          = getInt("Release Year: ");
+ 
+    if (lib.deleteGame(title, year)) {
+        std::cout << "  \"" << title << "\" (" << year << ") removed.\n";
+    } else {
+        std::cout << "  No matching game found.\n";
+    }
+}
+ 
+/*******************************************************************************
+ * main() — loads the database, runs the menu loop, and saves on exit.
+ ******************************************************************************/
+int main() {
+    Library lib;
+ 
+    // Attempt to load existing database on startup
+    if (lib.loadFromFile(DB_FILE)) {
+        std::cout << "  Library loaded from \"" << DB_FILE << "\".\n";
+    } else {
+        std::cout << "  No existing database found. Starting fresh.\n";
+    }
+ 
+    int choice = 0;
+    while (choice != 8) {
+        printMenu();
+        std::cin >> choice;
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "  Invalid input.\n";
+            continue;
+        }
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+ 
+        switch (choice) {
+            case 1:
+                std::cout << "\n  --- All Games ---\n";
+                lib.printAll();
+                break;
+ 
+            case 2:
+                addGame(lib);
+                break;
+ 
+            case 3:
+                deleteGame(lib);
+                break;
+ 
+            case 4: {
+                std::string genre = getLine("\n  Enter genre to search: ");
+                lib.findGenre(genre);
+                break;
+            }
+ 
+            case 5: {
+                std::string query = getLine("\n  Enter title (or partial title) to search: ");
+                lib.findGame(query);
+                break;
+            }
+ 
+            case 6:
+                if (lib.saveToFile(DB_FILE)) {
+                    std::cout << "  Library saved to \"" << DB_FILE << "\".\n";
+                } else {
+                    std::cout << "  Error: could not save to file.\n";
+                }
+                break;
+ 
+            case 7:
+                if (lib.loadFromFile(DB_FILE)) {
+                    std::cout << "  Library loaded from \"" << DB_FILE << "\".\n";
+                } else {
+                    std::cout << "  Error: could not open \"" << DB_FILE << "\".\n";
+                }
+                break;
+ 
+            case 8:
+                if (lib.saveToFile(DB_FILE)) {
+                    std::cout << "  Library saved. Goodbye!\n";
+                } else {
+                    std::cout << "  Warning: could not save library on exit.\n";
+                }
+                break;
+ 
+            default:
+                std::cout << "  Invalid choice. Please enter 1-8.\n";
+        }
+    }
+ 
+    return 0;
+}

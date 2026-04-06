@@ -1,0 +1,44 @@
+/*
+ * library.h
+ * Declares the Library class, which manages a sorted std::list of Game objects.
+ */
+ 
+#ifndef LIBRARY_H
+#define LIBRARY_H
+ 
+#include <list>
+#include <string>
+#include "game.h"
+ 
+class Library {
+public:
+    // Insert a game in alphabetical order
+    void insertSorted(const Game &game);
+ 
+    // Print all games in the library
+    void printAll() const;
+ 
+    // Print all games matching a specific genre (case-insensitive)
+    void findGenre(const std::string &genre) const;
+ 
+    // Print all games whose title contains the given substring (case-insensitive)
+    void findGame(const std::string &query) const;
+ 
+    // Delete a game by exact title and release year
+    bool deleteGame(const std::string &title, int year);
+ 
+    // File I/O
+    bool loadFromFile(const std::string &filename);
+    bool saveToFile(const std::string &filename) const;
+ 
+    // Print column headers for formatted output
+    static void printHeader();
+ 
+private:
+    std::list<Game> games_;
+ 
+    // Helper: convert string to lowercase for case-insensitive comparison
+    static std::string toLower(const std::string &str);
+};
+ 
+#endif // LIBRARY_H
